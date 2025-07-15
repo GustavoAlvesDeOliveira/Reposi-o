@@ -42,6 +42,13 @@ body {
   border-radius: 5px;
 }
 
+.dash-right .avisos .div-form select {
+  width: 97%;
+  height: 30px;
+  border-radius: 5px;
+}
+
+
 .dash-right .avisos .div-form textarea {
   width: 95%;
   border: 3px solid #e6005a;
@@ -425,4 +432,9 @@ canvas {
   padding: 10px 15px;
   margin-bottom: 100px;
   cursor: pointer;
+}
+
+.linhaap{
+  display: flex;
+  flex-direction: row;
 }

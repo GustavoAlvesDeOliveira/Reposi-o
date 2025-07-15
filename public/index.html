@@ -19,7 +19,7 @@
         rel="stylesheet">
 </head>
 
-<body  style="background-color: #161618;">
+<body  onload="autores()" style="background-color: #161618;">
 
     <div class="janela">
 
@@ -45,6 +45,13 @@
                 </div>
                 <div class="container">
                     <h1>Cadastrar um Livro</h1>
+                     <label>
+                                Caso não tenha o autor desejado, Cadastre:
+                            <div class="linhaap div-form">
+                             <input  id="ipt_autor" maxlength="100" type="text"> <button style="height: 40px;" onclick="cadastrarA()">Cadastrar</button>
+                             </div>
+                             *Vai recarregar a página!
+                             </label>
                     <div class="div-form">
                         <form id="form_postagem" method="post" onsubmit="return publicar()">
                             <label>
@@ -57,10 +64,10 @@
                             <label>
                                 Autor:
                                 <br>
-                                <input  id="autor" maxlength="100" type="text">
+                                <select id="select_autor"></select>
                             </label>
-                            <br>
-                            <br>
+                             <br>
+                             <br>
                             <label>
                                 Preço de compra:
                                 <br>
@@ -76,7 +83,7 @@
                             <br>
                             <br>
                             <label>
-                                Genêro:
+                                Gênero:
                                 <br>
                                 <select id="select_genero">
                                   <option value="1">Horror</option>
@@ -101,48 +108,118 @@
     </div>
 
 
-
-
 </body>
 
 </html>
 
 <script>
+
+
+    function autores(){
+        fetch("/avisos/listarAutores").then(function (resposta) {
+            if (resposta.ok) {
+                resposta.json().then(function (resposta) {
+                    console.log("Dados recebidos: ", JSON.stringify(resposta));
+
+                    for (let i = 0; i < resposta.length; i++) {
+                        let nome = resposta[i].nome;
+                        const select = document.getElementById("select_autor");
+                        const novaOpcao = document.createElement("option");
+
+                        novaOpcao.value = resposta[i].id;
+                        novaOpcao.text = nome;
+
+                        select.add(novaOpcao);
+                    }
+                });
+            } else {
+                throw ('Houve um erro na API!');
+            }
+        }).catch(function (resposta) {
+            console.error(resposta);
+        });
+    }
+
+    function cadastrarA(){
+        let autor = ipt_autor.value;
+
+        for(let i = 0; i < especial.length; i++){
+            if(autor.includes(especial[i])){
+                alert("Não pode conter caracteres especiais ou números");
+                return;
+            }
+        }
+
+        var corpoAutor = {
+            autorServer : autor
+        }
+
+        fetch(`/avisos/publicarAutor`, {
+            method: "post",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(corpoAutor)
+        }).then(function (resposta) {
+
+            console.log("resposta: ", resposta);
+
+            if (resposta.ok) {
+                window.alert("Autor Cadastrado");
+            } else if (resposta.status == 404) {
+                window.alert("Deu 404!");
+            } else {
+                throw ("Houve um erro ao tentar realizar a postagem! Código da resposta: " + resposta.status);
+            }
+        }).catch(function (resposta) {
+            console.log(`#ERRO: ${resposta}`);
+            finalizarAguardar();
+        });
+        window.location.reload()
+
+    }
     
-    const especial = [1,2,3,4,5,6,7,8,9,0,"!"]
+    const especial =  [
+   '!', '"', '#', '$', '%', '&', "'", '(', ')',
+  '*', '+', ',', '-', '.', '/', ':', ';', '<', '=',
+  '>', '?', '@', '[', '\\', ']', '^', '_', '`', '{',
+  '|', '}', '~','1','2','3','4','5','6','7','8','9','0'
+];
 
     function limparFormulario() {
         document.getElementById("form_postagem").reset();
     }
 
     function publicar() {
-      let precocompra = Number(ipt_precocompra.value);
-      let genero = select_genero.value
-      let precovenda = 0;
+        let autor = select_autor.value;
+        let precocompra = Number(ipt_precocompra.value);
+        let genero = select_genero.value
+        let precovenda = 0;
 
 
-      if(precocompra >= 100 && (genero == 1 || genero == 2)){
+        if(precocompra >= 100 && (genero == 1 || genero == 2)){
         precovenda = precocompra + (precocompra * 0.225)
-      }
-      else if(precocompra < 50 && (genero == 3)){
+        }
+        else if(precocompra < 50 && (genero == 3)){
         precovenda = precocompra + (precocompra * 0.25)
-      }
-      else if( precocompra < 50 && precocompra <= 100 && genero == 4){
+        }
+        else if( precocompra < 50 && precocompra <= 100 && genero == 4){
         precovenda = precocompra + (precocompra * 0.275)
-      }
-      else{
+        }
+        else{
         precovenda = precocompra;
-      }
-      console.log(precovenda);
+        }
+        console.log(precovenda);
+
 
 
         var corpo = {
-            titulo: form_postagem.titulo.value,
-            autor: form_postagem.autor.value,
-            precocompra: form_postagem.ipt_precocompra.value,
-            precovenda: precovenda,
-            quantidade: form_postagem.quantidade.value,
-            genero: select_genero
+            tituloServer: form_postagem.titulo.value,
+            autorServer: autor,
+            precocompraServer: form_postagem.ipt_precocompra.value,
+            precovendaServer: precovenda,
+            quantidadeServer: form_postagem.quantidade.value,
+            generoServer: genero
 
         }
 
@@ -174,37 +251,8 @@
 
     }
 
-    function editar(idAviso) {
-        sessionStorage.ID_POSTAGEM_EDITANDO = idAviso;
-        console.log("cliquei em editar - " + idAviso);
-        window.alert("Você será redirecionado à página de edição do aviso de id número: " + idAviso);
-        window.location = "/dashboard/edicao-aviso.html"
-
-    }
-
-    function deletar(idAviso) {
-        console.log("Criar função de apagar post escolhido - ID" + idAviso);
-        fetch(`/avisos/deletar/${idAviso}`, {
-            method: "DELETE",
-            headers: {
-                "Content-Type": "application/json"
-            }
-        }).then(function (resposta) {
-
-            if (resposta.ok) {
-                window.alert("Post deletado com sucesso pelo usuario de email: " + sessionStorage.getItem("EMAIL_USUARIO") + "!");
-                window.location = "/dashboard/mural.html"
-            } else if (resposta.status == 404) {
-                window.alert("Deu 404!");
-            } else {
-                throw ("Houve um erro ao tentar realizar a postagem! Código da resposta: " + resposta.status);
-            }
-        }).catch(function (resposta) {
-            console.log(`#ERRO: ${resposta}`);
-        });
-    }
-
     function atualizarFeed() {
+
         fetch("/avisos/listar").then(function (resposta) {
             if (resposta.ok) {
                 if (resposta.status == 204) {
@@ -220,10 +268,10 @@
 
                     var feed = document.getElementById("feed_container");
                     feed.innerHTML = "";
+
                     for (let i = 0; i < resposta.length; i++) {
                         var publicacao = resposta[i];
 
-                        // criando e manipulando elementos do HTML via JavaScript
                         var divPublicacao = document.createElement("div");
                         var spanID = document.createElement("span");
                         var spanTitulo = document.createElement("span");
